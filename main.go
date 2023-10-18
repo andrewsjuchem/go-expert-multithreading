@@ -38,32 +38,37 @@ func main() {
 	// reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your Postal Code (CEP): ")
 	// cepParam, _ := reader.ReadString('\n')
-	cepParam := "93125-486"
+	cepParam := "93125-480"
 	cepParam = strings.TrimSpace(cepParam)
 	fmt.Printf("Your postal code is %s\n", cepParam)
 
+	var responseString string
+
+	// OPTION 1
 	viaCep, error := FindPostalCodeViaCEP(cepParam)
 	if error != nil {
 		log.Println(error)
-		fmt.Fprintf(os.Stderr, "Error while parsing the response: %v\n", error)
+		fmt.Fprintf(os.Stderr, "Error while getting the response: %v\n", error)
 	}
-	jsonDataIndent, error := json.MarshalIndent(viaCep, "", "    ")
-	if error != nil {
-		log.Println(error)
-		return
+	if viaCep.Erro {
+		responseString = "Invalid postal code (CEP)"
+	} else {
+		responseString = viaCep.Logradouro + ", " + viaCep.Bairro + ", " + viaCep.Localidade + ", " + viaCep.Uf + ", " + viaCep.Cep
 	}
-	fmt.Println(string(jsonDataIndent))
+	fmt.Println(responseString)
 
+	// OPTION 2
 	apiCep, error := FindPostalCodeBrasilApiCEP(cepParam)
 	if error != nil {
-		fmt.Fprintf(os.Stderr, "Error while parsing the response: %v\n", error)
-	}
-	jsonDataIndent, error = json.MarshalIndent(apiCep, "", "    ")
-	if error != nil {
 		log.Println(error)
-		return
+		fmt.Fprintf(os.Stderr, "Error while getting the response: %v\n", error)
 	}
-	fmt.Println(string(jsonDataIndent))
+	if apiCep.Message != "" {
+		responseString = "Invalid postal code (CEP)"
+	} else {
+		responseString = apiCep.Street + ", " + apiCep.Neighborhood + ", " + apiCep.City + ", " + apiCep.State + ", " + apiCep.Cep
+	}
+	fmt.Println(responseString)
 }
 
 func FindPostalCodeViaCEP(cep string) (*ViaCEP, error) {
