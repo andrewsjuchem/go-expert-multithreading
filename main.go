@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type ViaCEP struct {
@@ -35,78 +37,84 @@ type BrasilApiCep struct {
 }
 
 func main() {
-	// reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your Postal Code (CEP): ")
-	// cepParam, _ := reader.ReadString('\n')
-	cepParam := "93125-480"
+	cepParam, _ := reader.ReadString('\n')
+	// cepParam := "93520-575"
 	cepParam = strings.TrimSpace(cepParam)
 	fmt.Printf("Your postal code is %s\n", cepParam)
 
+	viaCepChannel := make(chan ViaCEP)
+	brasilApiCepChannel := make(chan BrasilApiCep)
 	var responseString string
 
-	// OPTION 1
-	viaCep, error := FindPostalCodeViaCEP(cepParam)
-	if error != nil {
-		log.Println(error)
-		fmt.Fprintf(os.Stderr, "Error while getting the response: %v\n", error)
-	}
-	if viaCep.Erro {
-		responseString = "Invalid postal code (CEP)"
-	} else {
-		responseString = viaCep.Logradouro + ", " + viaCep.Bairro + ", " + viaCep.Localidade + ", " + viaCep.Uf + ", " + viaCep.Cep
-	}
-	fmt.Println(responseString)
+	go FindPostalCodeViaCEP(cepParam, viaCepChannel)
+	go FindPostalCodeBrasilApiCEP(cepParam, brasilApiCepChannel)
 
-	// OPTION 2
-	apiCep, error := FindPostalCodeBrasilApiCEP(cepParam)
-	if error != nil {
-		log.Println(error)
-		fmt.Fprintf(os.Stderr, "Error while getting the response: %v\n", error)
+	select {
+	case viaCep := <-viaCepChannel:
+		if viaCep.Erro {
+			responseString = "Invalid postal code (CEP)"
+		} else {
+			responseString = viaCep.Logradouro + ", " + viaCep.Bairro + ", " + viaCep.Localidade + ", " + viaCep.Uf + ", " + viaCep.Cep
+		}
+		fmt.Println("Source: ViaCEP")
+		fmt.Println("Address: " + responseString)
+
+	case brasilApiCep := <-brasilApiCepChannel:
+		if brasilApiCep.Message != "" {
+			responseString = "Invalid postal code (CEP)"
+		} else {
+			responseString = brasilApiCep.Street + ", " + brasilApiCep.Neighborhood + ", " + brasilApiCep.City + ", " + brasilApiCep.State + ", " + brasilApiCep.Cep
+		}
+		fmt.Println("Source: BrasilApiCep")
+		fmt.Println("Address: " + responseString)
+
+	case <-time.After(time.Second * 1):
+		println("timeout")
+		// default:
+		// 	println("default")
 	}
-	if apiCep.Message != "" {
-		responseString = "Invalid postal code (CEP)"
-	} else {
-		responseString = apiCep.Street + ", " + apiCep.Neighborhood + ", " + apiCep.City + ", " + apiCep.State + ", " + apiCep.Cep
-	}
-	fmt.Println(responseString)
 }
 
-func FindPostalCodeViaCEP(cep string) (*ViaCEP, error) {
+func FindPostalCodeViaCEP(cep string, viaCepChannel chan ViaCEP) {
 	resp, error := http.Get("https://viacep.com.br/ws/" + cep + "/json/")
 	if error != nil {
-		return nil, error
+		log.Println(error)
+		panic(error)
 	}
 	defer resp.Body.Close()
 	body, error := io.ReadAll(resp.Body)
 	if error != nil {
 		log.Println(error)
-		return nil, error
+		panic(error)
 	}
 	var c ViaCEP
 	error = json.Unmarshal(body, &c)
 	if error != nil {
 		log.Println(error)
-		return nil, error
+		panic(error)
 	}
-	return &c, nil
+	viaCepChannel <- c
 }
 
-func FindPostalCodeBrasilApiCEP(cep string) (*BrasilApiCep, error) {
+func FindPostalCodeBrasilApiCEP(cep string, brasilApiCepChannel chan BrasilApiCep) {
 	resp, error := http.Get("https://brasilapi.com.br/api/cep/v1/" + cep)
 	if error != nil {
-		return nil, error
+		log.Println(error)
+		panic(error)
 	}
 	defer resp.Body.Close()
 	body, error := io.ReadAll(resp.Body)
 	if error != nil {
 		log.Println(error)
-		return nil, error
+		panic(error)
 	}
 	var c BrasilApiCep
 	error = json.Unmarshal(body, &c)
 	if error != nil {
 		log.Println(error)
-		return nil, error
+		panic(error)
 	}
-	return &c, nil
+	brasilApiCepChannel <- c
 }
