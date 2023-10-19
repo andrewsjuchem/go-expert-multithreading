@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -37,10 +35,10 @@ type BrasilApiCep struct {
 }
 
 func main() {
-	reader := bufio.NewReader(os.Stdin)
+	// reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your Postal Code (CEP): ")
-	cepParam, _ := reader.ReadString('\n')
-	// cepParam := "93520-575"
+	// cepParam, _ := reader.ReadString('\n')
+	cepParam := "93520-575"
 	cepParam = strings.TrimSpace(cepParam)
 	fmt.Printf("Your postal code is %s\n", cepParam)
 
