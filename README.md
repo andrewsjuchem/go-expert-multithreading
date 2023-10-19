@@ -12,3 +12,10 @@ After executing the file below, the app will prompt the user to enter a Brazilia
 ```
 go run main.go
 ```
+
+**Testing**
+
+The command below calls the app 10 times with a fixed input (e.g. "93520-575").
+```
+go test -v
+```
