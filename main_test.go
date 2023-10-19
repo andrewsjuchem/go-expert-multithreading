@@ -14,6 +14,6 @@ func TestMainGo(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Command finished with error: %v", err)
 		}
-		t.Log(string(output)) // Log the output
+		t.Log(string(output))
 	}
 }
