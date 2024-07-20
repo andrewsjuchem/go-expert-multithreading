@@ -13,17 +13,17 @@ import (
 )
 
 type ViaCEP struct {
-	Cep          string `json:"cep"`
-	Street       string `json:"logradouro"`
-	Street2      string `json:"complemento"`
-	Neighborhood string `json:"bairro"`
-	City         string `json:"localidade"`
-	Uf           string `json:"uf"`
-	Ibge         string `json:"ibge"`
-	Gia          string `json:"gia"`
-	Ddd          string `json:"ddd"`
-	Siafi        string `json:"siafi"`
-	Error        bool   `json:"erro"`
+	Cep         string `json:"cep"`
+	Logradouro  string `json:"logradouro"`
+	Complemento string `json:"complemento"`
+	Bairro      string `json:"bairro"`
+	Localidade  string `json:"localidade"`
+	Uf          string `json:"uf"`
+	Ibge        string `json:"ibge"`
+	Gia         string `json:"gia"`
+	Ddd         string `json:"ddd"`
+	Siafi       string `json:"siafi"`
+	Erro        bool   `json:"erro"`
 }
 
 type BrasilApiCep struct {
@@ -53,10 +53,10 @@ func main() {
 
 	select {
 	case viaCep := <-viaCepChannel:
-		if viaCep.Error {
+		if viaCep.Erro {
 			responseString = "Invalid postal code (CEP)"
 		} else {
-			responseString = viaCep.Street + ", " + viaCep.Neighborhood + ", " + viaCep.City + ", " + viaCep.Uf + ", " + viaCep.Cep
+			responseString = viaCep.Logradouro + ", " + viaCep.Bairro + ", " + viaCep.Localidade + ", " + viaCep.Uf + ", " + viaCep.Cep
 		}
 		fmt.Println("Source: ViaCEP")
 		fmt.Println("Address: " + responseString)
